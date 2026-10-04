@@ -59,65 +59,117 @@ const schedule={
 };
 const days=["Понедельник","Вторник","Среда","Четверг","Пятница"];
 const shortDays=["Пн","Вт","Ср","Чт","Пт"];
+
+function moscowParts(){
+ const parts=new Intl.DateTimeFormat("en-US",{timeZone:"Europe/Moscow",year:"numeric",month:"numeric",day:"numeric",weekday:"long"}).formatToParts(new Date());
+ const get=t=>Number(parts.find(p=>p.type===t).value);
+ return {year:get("year"),month:get("month"),day:get("day"),weekday:parts.find(p=>p.type==="weekday").value};
+}
 function moscowWeekday(){
- const wd=new Intl.DateTimeFormat("en-US",{timeZone:"Europe/Moscow",weekday:"long"}).format(new Date());
- return {Monday:"Понедельник",Tuesday:"Вторник",Wednesday:"Среда",Thursday:"Четверг",Friday:"Пятница"}[wd]||"Понедельник";
+ const map={Monday:"Понедельник",Tuesday:"Вторник",Wednesday:"Среда",Thursday:"Четверг",Friday:"Пятница"};
+ return map[moscowParts().weekday]||"Понедельник";
 }
 let selectedDay=moscowWeekday();
 
-let homework=JSON.parse(localStorage.getItem("dnevnic_homework")||"[]");
-// Перевод старых записей с дат на дни недели
+let homework=[];
+try{
+ const saved=JSON.parse(localStorage.getItem("dnevnic_homework")||"[]");
+ homework=Array.isArray(saved)?saved:[];
+}catch(e){homework=[];}
+
 homework=homework.map(x=>{
- if(!x.day&&x.date){const d=new Date(x.date+"T12:00:00"),n=d.getDay();x.day=n>=1&&n<=5?days[n-1]:"Понедельник";delete x.date}
+ if(!x.day&&x.date){
+  const d=new Date(x.date+"T12:00:00"),n=d.getDay();
+  x.day=n>=1&&n<=5?days[n-1]:"Понедельник";
+  delete x.date;
+ }
  return x;
 });
 
-function save(){localStorage.setItem("dnevnic_homework",JSON.stringify(homework))}
-function moscowToday(){
- const s=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Moscow",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
- const [y,m,d]=s.split("-").map(Number);
- return {year:y,month:m,day:d};
-}
+function save(){localStorage.setItem("dnevnic_homework",JSON.stringify(homework));}
+
 function weekDates(){
- const t=moscowToday();
+ const t=moscowParts();
  const now=new Date(t.year,t.month-1,t.day);
- const day=now.getDay(),diff=day===0?-6:1-day;
- const monday=new Date(now);monday.setDate(now.getDate()+diff);
- return days.map((_,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);return d});
+ const day=now.getDay();
+ const diff=day===0?-6:1-day;
+ const monday=new Date(now);
+ monday.setDate(now.getDate()+diff);
+ return days.map((_,i)=>{
+  const d=new Date(monday);
+  d.setDate(monday.getDate()+i);
+  return d;
+ });
 }
-function dateText(d){return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")}
+function dateText(d){
+ return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0");
+}
+function esc(t){
+ return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+}
 function renderTabs(){
  const dates=weekDates();
- document.getElementById("dayTabs").innerHTML=days.map((d,i)=>'<button class="tab '+(d===selectedDay?"active":"")+'" data-day="'+esc(d)+'" onclick="selectDay(this.dataset.day)"><b>'+shortDays[i]+'</b><span>'+dateText(d)+'</span></button>').join("");
+ document.getElementById("dayTabs").innerHTML=days.map((d,i)=>
+  '<button class="tab '+(d===selectedDay?"active":"")+'" data-day="'+esc(d)+'" onclick="selectDay(this.dataset.day)"><b>'+shortDays[i]+'</b><span>'+dateText(d)+'</span></button>'
+ ).join("");
 }
 function renderSchedule(){
- const lessons=schedule[selectedDay];
- document.getElementById("scheduleTitle").textContent=selectedDay;
- document.getElementById("scheduleList").innerHTML=lessons.map((x,i)=>'<div class="lesson"><div class="num">'+(i+1)+'</div><div class="lesson-name">'+esc(x)+'</div></div>').join("");
+ const lessons=schedule[selectedDay]||[];
+ document.getElementById("scheduleTitle").textContent="Расписание — "+selectedDay;
+ document.getElementById("scheduleList").innerHTML=lessons.map((x,i)=>
+  '<div class="lesson"><div class="num">'+(i+1)+'</div><div class="lesson-name">'+esc(x)+'</div></div>'
+ ).join("");
 }
-function selectDay(day){selectedDay=day;renderTabs();renderSchedule();render()}
-function render(){
- const list=document.getElementById("homeworkList"),items=homework.filter(x=>x.day===selectedDay).sort((a,b)=>b.id-a.id);
- if(!items.length){list.innerHTML='<div class="empty">На '+selectedDay.toLowerCase()+' домашнего задания нет</div>';return}
- list.innerHTML=items.map(x=>'<div class="homework '+(x.done?"done":"")+'"><div class="subject">'+esc(x.subject)+'</div><div class="task">'+esc(x.task)+'</div><div class="actions"><button class="done-btn" onclick="toggleDone('+x.id+')">'+(x.done?"Не выполнено":"Выполнено")+'</button><button class="delete-btn" onclick="deleteHomework('+x.id+')">Удалить</button></div></div>').join("");
+function selectDay(day){
+ if(!schedule[day]) return;
+ selectedDay=day;
+ renderTabs();
+ renderSchedule();
+ renderHomework();
+}
+function renderHomework(){
+ const list=document.getElementById("homeworkList");
+ const items=homework.filter(x=>x.day===selectedDay).sort((a,b)=>(Number(b.id)||0)-(Number(a.id)||0));
+ if(!items.length){
+  list.innerHTML='<div class="empty">На '+selectedDay.toLowerCase()+' домашнего задания нет</div>';
+  return;
+ }
+ list.innerHTML=items.map(x=>
+  '<div class="homework '+(x.done?"done":"")+'"><div class="subject">'+esc(x.subject)+'</div><div class="task">'+esc(x.task)+'</div><div class="actions"><button class="done-btn" onclick="toggleDone('+Number(x.id)+')">'+(x.done?"Не выполнено":"Выполнено")+'</button><button class="delete-btn" onclick="deleteHomework('+Number(x.id)+')">Удалить</button></div></div>'
+ ).join("");
 }
 function openModal(){
  const select=document.getElementById("subject");
- select.innerHTML=schedule[selectedDay].map(x=>'<option>'+esc(x)+'</option>').join("");
+ select.innerHTML=(schedule[selectedDay]||[]).map(x=>'<option>'+esc(x)+'</option>').join("");
+ document.getElementById("task").value="";
  document.getElementById("modalBg").style.display="flex";
 }
-function closeModal(){document.getElementById("modalBg").style.display="none"}
+function closeModal(){document.getElementById("modalBg").style.display="none";}
 function addHomework(){
- const subject=document.getElementById("subject").value,task=document.getElementById("task").value.trim();
- if(!task){alert("Напиши задание");return}
- homework.push({id:Date.now(),day:selectedDay,subject,task,done:false});
- save();document.getElementById("task").value="";closeModal();render();
+ const subject=document.getElementById("subject").value;
+ const task=document.getElementById("task").value.trim();
+ if(!task){alert("Напиши задание");return;}
+ homework.push({id:Date.now(),day:selectedDay,subject:subject,task:task,done:false});
+ save();
+ closeModal();
+ renderHomework();
 }
-function toggleDone(id){const x=homework.find(x=>x.id===id);if(x){x.done=!x.done;save();render()}}
-function deleteHomework(id){homework=homework.filter(x=>x.id!==id);save();render()}
-document.getElementById("modalBg").addEventListener("click",e=>{if(e.target===e.currentTarget)closeModal()});
-function esc(t){return String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
-renderTabs();renderSchedule();render();save();
+function toggleDone(id){
+ const x=homework.find(x=>Number(x.id)===Number(id));
+ if(x){x.done=!x.done;save();renderHomework();}
+}
+function deleteHomework(id){
+ homework=homework.filter(x=>Number(x.id)!==Number(id));
+ save();
+ renderHomework();
+}
+document.getElementById("modalBg").addEventListener("click",function(e){
+ if(e.target===e.currentTarget) closeModal();
+});
+renderTabs();
+renderSchedule();
+renderHomework();
+save();
 </script>
 </body>
 </html>
