@@ -59,8 +59,11 @@ const schedule={
 };
 const days=["Понедельник","Вторник","Среда","Четверг","Пятница"];
 const shortDays=["Пн","Вт","Ср","Чт","Пт"];
-let selectedDay=days[Math.max(0,new Date().getDay()-1)];
-if(!days.includes(selectedDay)) selectedDay="Понедельник";
+function moscowWeekday(){
+ const wd=new Intl.DateTimeFormat("en-US",{timeZone:"Europe/Moscow",weekday:"long"}).format(new Date());
+ return {Monday:"Понедельник",Tuesday:"Вторник",Wednesday:"Среда",Thursday:"Четверг",Friday:"Пятница"}[wd]||"Понедельник";
+}
+let selectedDay=moscowWeekday();
 
 let homework=JSON.parse(localStorage.getItem("dnevnic_homework")||"[]");
 // Перевод старых записей с дат на дни недели
@@ -79,12 +82,6 @@ function weekDates(){
  const t=moscowToday();
  const now=new Date(t.year,t.month-1,t.day);
  const day=now.getDay(),diff=day===0?-6:1-day;
- const monday=new Date(now);monday.setDate(now.getDate()+diff);
- return days.map((_,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);return d});
-}
-function dateText(d){return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")}
-function weekDates(){
- const now=moscowNow(),day=now.getDay(),diff=day===0?-6:1-day;
  const monday=new Date(now);monday.setDate(now.getDate()+diff);
  return days.map((_,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);return d});
 }
