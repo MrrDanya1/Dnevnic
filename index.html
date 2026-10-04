@@ -48,17 +48,41 @@ body.light{background:#f5f5f5;color:#111}body.light .class-name{color:#777}body.
 <button class="cancel" onclick="closeModal()">Отмена</button>
 </div></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 (function(){
 var schedule={"Понедельник":["Разговор о важном","Русский язык","Русский язык","Физика","Биология","Вероятность и статистика","Английский язык"],"Вторник":["Литература","История","Английский язык","Алгебра","Химия","Геометрия","Курсы «Интересные вопросы математики» (факультатив ОГЭ)"],"Среда":["Русский язык","Физическая культура","Литература","ОБЖ","Алгебра","География","Обществознание"],"Четверг":["Физическая культура","Биология","Технология","Геометрия","Химия","Физика"],"Пятница":["География","Физика","История","Алгебра","Литература","Информатика / Английский язык","Информатика / Английский язык"]};
 var days=["Понедельник","Вторник","Среда","Четверг","Пятница"],shortDays=["Пн","Вт","Ср","Чт","Пт"],selectedDay="Понедельник",homework=[],weekOffset=0;
+var SUPABASE_URL="https://rlhlcubulfibqzqlynxe.supabase.co",SUPABASE_KEY="sb_publishable_m5vtdCgYosZ-ZkQc8D9xZw_HwA4-_32",db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 function moscow(){var d=new Date(Date.now()+10800000);return new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));}
 function monday(){var t=moscow(),n=t.getUTCDay(),m=new Date(t);m.setUTCDate(t.getUTCDate()-(n===0?6:n-1)+weekOffset*7);return m;}
 function weekKey(){var d=monday();return d.getUTCFullYear()+"-"+("0"+(d.getUTCMonth()+1)).slice(-2)+"-"+("0"+d.getUTCDate()).slice(-2);}
 function weekDates(){var m=monday(),a=[];for(var i=0;i<5;i++){var d=new Date(m);d.setUTCDate(m.getUTCDate()+i);a.push(d);}return a;}
 function weekLabel(){var d=weekDates();var a=("0"+d[0].getUTCDate()).slice(-2)+"."+("0"+(d[0].getUTCMonth()+1)).slice(-2),b=("0"+d[4].getUTCDate()).slice(-2)+"."+("0"+(d[4].getUTCMonth()+1)).slice(-2);return weekOffset===0?"Эта неделя":"Следующая неделя";}
-function load(){try{homework=JSON.parse(localStorage.getItem("dnevnic_homework")||"[]");if(!Array.isArray(homework))homework=[];}catch(e){homework=[];}for(var i=0;i<homework.length;i++){if(!homework[i].day&&homework[i].date){var p=String(homework[i].date).split("-"),d=new Date(+p[0],+p[1]-1,+p[2]||1),n=d.getDay();homework[i].day=n>=1&&n<=5?days[n-1]:"Понедельник";homework[i].week=weekKey();delete homework[i].date;}if(!homework[i].week)homework[i].week=weekKey();}save();}
+function currentWeekKey(){var t=moscow(),n=t.getUTCDay(),m=new Date(t);m.setUTCDate(t.getUTCDate()-(n===0?6:n-1));return m.getUTCFullYear()+"-"+("0"+(m.getUTCMonth()+1)).slice(-2)+"-"+("0"+m.getUTCDate()).slice(-2);}
+function normalizeLocal(){
+  try{homework=JSON.parse(localStorage.getItem("dnevnic_homework")||"[]");if(!Array.isArray(homework))homework=[];}catch(e){homework=[];}
+  for(var i=0;i<homework.length;i++){
+    if(!homework[i].day&&homework[i].date){var p=String(homework[i].date).split("-"),d=new Date(+p[0],+p[1]-1,+p[2]||1),n=d.getDay();homework[i].day=n>=1&&n<=5?days[n-1]:"Понедельник";homework[i].week=currentWeekKey();delete homework[i].date;}
+    if(!homework[i].week)homework[i].week=currentWeekKey();
+  }
+}
 function save(){try{localStorage.setItem("dnevnic_homework",JSON.stringify(homework));}catch(e){}}
+async function dbLoad(){
+  normalizeLocal();
+  try{
+    var r=await db.from("homework").select("*").order("week_key",{ascending:true}).order("day",{ascending:true}).order("id",{ascending:true});
+    if(r.error)throw r.error;
+    if(!r.data||!r.data.length){
+      var old=homework.filter(function(x){return x.task&&x.subject&&x.day&&x.week;}).map(function(x){return {week_key:x.week,day:x.day,subject:x.subject,task:x.task,done:!!x.done};});
+      if(old.length){var ins=await db.from("homework").insert(old);if(ins.error)throw ins.error;}
+    }
+    var r2=await db.from("homework").select("*").order("id",{ascending:true});
+    if(r2.error)throw r2.error;
+    homework=(r2.data||[]).map(function(x){return {id:x.id,day:x.day,week:x.week_key,subject:x.subject,task:x.task,done:!!x.done};});
+    save();
+  }catch(e){console.error("Supabase:",e);save();}
+}
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function renderTabs(){var a=weekDates(),h="";document.getElementById("weekName").textContent=weekLabel();for(var i=0;i<5;i++)h+='<button type="button" class="tab '+(days[i]===selectedDay?"active":"")+'" onclick="selectDay('+i+')"><b>'+shortDays[i]+'</b><span>'+("0"+a[i].getUTCDate()).slice(-2)+"."+("0"+(a[i].getUTCMonth()+1)).slice(-2)+'</span></button>';document.getElementById("dayTabs").innerHTML=h;}
 function render(){var l=schedule[selectedDay]||[],h="",wk=weekKey();for(var i=0;i<l.length;i++){h+='<div class="lesson"><div class="num">'+(i+1)+'</div><div class="lesson-info"><div class="lesson-name">'+esc(l[i])+'</div>';for(var j=0;j<homework.length;j++)if(homework[j].week===wk&&homework[j].day===selectedDay&&homework[j].subject===l[i])h+='<div class="lesson-hw '+(homework[j].done?"done":"")+'">ДЗ: '+esc(homework[j].task)+'</div><div class="actions"><button type="button" onclick="toggleDone('+j+')">'+(homework[j].done?"Вернуть":"Выполнено")+'</button><button type="button" class="delete-btn" onclick="deleteHomework('+j+')">Удалить</button></div>';h+='</div></div>';}document.getElementById("scheduleTitle").textContent=selectedDay;document.getElementById("scheduleList").innerHTML=h;}
@@ -66,11 +90,29 @@ function selectDay(i){selectedDay=days[i];renderTabs();render();}
 function prevWeek(){if(weekOffset>0){weekOffset--;renderTabs();render();}} function nextWeek(){if(weekOffset<1){weekOffset++;renderTabs();render();}}
 function openMenu(){document.getElementById("menuBg").style.display="block";} function closeMenu(){document.getElementById("menuBg").style.display="none";} function setTheme(t){document.body.classList.toggle("light",t==="light");localStorage.setItem("dnevnic_theme",t);document.getElementById("darkThemeBtn").classList.toggle("active",t==="dark");document.getElementById("lightThemeBtn").classList.toggle("active",t==="light");} function telegram(){alert("Telegram-бот пока подключим позже.");} function updateSubjectOptions(){var day=document.getElementById("hwDay").value,s=document.getElementById("subject"),l=schedule[day]||[],h="";for(var i=0;i<l.length;i++)h+="<option>"+esc(l[i])+"</option>";s.innerHTML=h;} function openModal(){closeMenu();document.getElementById("menu-button")?.classList.add("hidden");document.getElementById("hwDay").value=selectedDay;document.getElementById("hwWeek").value=String(weekOffset);updateSubjectOptions();var s=document.getElementById("subject"),l=schedule[selectedDay],h="";for(var i=0;i<l.length;i++)h+="<option>"+esc(l[i])+"</option>";s.innerHTML=h;document.getElementById("task").value="";document.getElementById("modalBg").style.display="flex";}
 function closeModal(){document.getElementById("modalBg").style.display="none";document.getElementById("menu-button")?.classList.remove("hidden");}
-function addHomework(){var s=document.getElementById("subject").value,t=document.getElementById("task").value.trim();if(!t){alert("Напиши задание");return;}var day=document.getElementById("hwDay").value,w=parseInt(document.getElementById("hwWeek").value,10)||0,old=weekOffset;weekOffset=w;var wk=weekKey();weekOffset=old;homework.push({id:Date.now(),day:day,week:wk,subject:s,task:t,done:false});save();closeModal();render();}
-function toggleDone(i){if(homework[i]){homework[i].done=!homework[i].done;save();render();}}
-function deleteHomework(i){homework.splice(i,1);save();render();}
+async function addHomework(){
+  var s=document.getElementById("subject").value,t=document.getElementById("task").value.trim();
+  if(!t){alert("Напиши задание");return;}
+  var day=document.getElementById("hwDay").value,w=parseInt(document.getElementById("hwWeek").value,10)||0,old=weekOffset;
+  weekOffset=w;var wk=weekKey();weekOffset=old;
+  var r=await db.from("homework").insert({week_key:wk,day:day,subject:s,task:t,done:false});
+  if(r.error){alert("Не удалось сохранить ДЗ");console.error(r.error);return;}
+  closeModal();await dbLoad();renderTabs();render();
+}
+async function toggleDone(i){
+  if(!homework[i])return;
+  var r=await db.from("homework").update({done:!homework[i].done}).eq("id",homework[i].id);
+  if(r.error){alert("Не удалось изменить ДЗ");console.error(r.error);return;}
+  homework[i].done=!homework[i].done;save();render();
+}
+async function deleteHomework(i){
+  if(!homework[i])return;
+  var r=await db.from("homework").delete().eq("id",homework[i].id);
+  if(r.error){alert("Не удалось удалить ДЗ");console.error(r.error);return;}
+  homework.splice(i,1);save();render();
+}
 window.selectDay=selectDay;window.prevWeek=prevWeek;window.updateSubjectOptions=updateSubjectOptions;window.openMenu=openMenu;window.closeMenu=closeMenu;window.setTheme=setTheme;window.telegram=telegram;window.nextWeek=nextWeek;window.openModal=openModal;window.closeModal=closeModal;window.addHomework=addHomework;window.toggleDone=toggleDone;window.deleteHomework=deleteHomework;
-window.addEventListener("DOMContentLoaded",function(){var theme=localStorage.getItem("dnevnic_theme")||"dark";setTheme(theme);var n=moscow().getUTCDay();if(n>=1&&n<=5)selectedDay=days[n-1];load();renderTabs();render();document.getElementById("modalBg").addEventListener("click",function(e){if(e.target===this)closeModal();});document.getElementById("menuBg").addEventListener("click",function(e){if(e.target===this)closeMenu();});});
+window.addEventListener("DOMContentLoaded",async function(){var theme=localStorage.getItem("dnevnic_theme")||"dark";setTheme(theme);var n=moscow().getUTCDay();if(n>=1&&n<=5)selectedDay=days[n-1];normalizeLocal();await dbLoad();renderTabs();render();document.getElementById("modalBg").addEventListener("click",function(e){if(e.target===this)closeModal();});document.getElementById("menuBg").addEventListener("click",function(e){if(e.target===this)closeMenu();});});
 })();
 </script>
 </body>
