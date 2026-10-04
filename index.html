@@ -53,13 +53,14 @@ body.light{background:#f5f5f5;color:#111}body.light .class-name{color:#777}body.
 (function(){
 var schedule={"Понедельник":["Разговор о важном","Русский язык","Русский язык","Физика","Биология","Вероятность и статистика","Английский язык"],"Вторник":["Литература","История","Английский язык","Алгебра","Химия","Геометрия","Курсы «Интересные вопросы математики» (факультатив ОГЭ)"],"Среда":["Русский язык","Физическая культура","Литература","ОБЖ","Алгебра","География","Обществознание"],"Четверг":["Физическая культура","Биология","Технология","Геометрия","Химия","Физика"],"Пятница":["География","Физика","История","Алгебра","Литература","Информатика / Английский язык","Информатика / Английский язык"]};
 var days=["Понедельник","Вторник","Среда","Четверг","Пятница"],shortDays=["Пн","Вт","Ср","Чт","Пт"],selectedDay="Понедельник",homework=[],weekOffset=0;
-var SUPABASE_URL="https://rlhlcubulfibqzqlynxe.supabase.co",SUPABASE_KEY="sb_publishable_m5vtdCgYosZ-ZkQc8D9xZw_HwA4-_32",db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+var SUPABASE_URL="https://rlhlcubulfibqzqlynxe.supabase.co",SUPABASE_KEY="sb_publishable_m5vtdCgYosZ-ZkQc8D9xZw_HwA4-_32",db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),doneLocal={};
 function moscow(){var d=new Date(Date.now()+10800000);return new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));}
 function monday(){var t=moscow(),n=t.getUTCDay(),m=new Date(t);m.setUTCDate(t.getUTCDate()-(n===0?6:n-1)+weekOffset*7);return m;}
 function weekKey(){var d=monday();return d.getUTCFullYear()+"-"+("0"+(d.getUTCMonth()+1)).slice(-2)+"-"+("0"+d.getUTCDate()).slice(-2);}
 function weekDates(){var m=monday(),a=[];for(var i=0;i<5;i++){var d=new Date(m);d.setUTCDate(m.getUTCDate()+i);a.push(d);}return a;}
 function weekLabel(){var d=weekDates();var a=("0"+d[0].getUTCDate()).slice(-2)+"."+("0"+(d[0].getUTCMonth()+1)).slice(-2),b=("0"+d[4].getUTCDate()).slice(-2)+"."+("0"+(d[4].getUTCMonth()+1)).slice(-2);return weekOffset===0?"Эта неделя":"Следующая неделя";}
 function currentWeekKey(){var t=moscow(),n=t.getUTCDay(),m=new Date(t);m.setUTCDate(t.getUTCDate()-(n===0?6:n-1));return m.getUTCFullYear()+"-"+("0"+(m.getUTCMonth()+1)).slice(-2)+"-"+("0"+m.getUTCDate()).slice(-2);}
+function loadDoneLocal(){try{doneLocal=JSON.parse(localStorage.getItem("dnevnic_done")||"{}");if(!doneLocal||typeof doneLocal!=="object")doneLocal={};}catch(e){doneLocal={};}}
 function normalizeLocal(){
   try{homework=JSON.parse(localStorage.getItem("dnevnic_homework")||"[]");if(!Array.isArray(homework))homework=[];}catch(e){homework=[];}
   for(var i=0;i<homework.length;i++){
@@ -67,7 +68,7 @@ function normalizeLocal(){
     if(!homework[i].week)homework[i].week=currentWeekKey();
   }
 }
-function save(){try{localStorage.setItem("dnevnic_homework",JSON.stringify(homework));}catch(e){}}
+function save(){try{localStorage.setItem("dnevnic_homework",JSON.stringify(homework));localStorage.setItem("dnevnic_done",JSON.stringify(doneLocal));}catch(e){}}
 async function dbLoad(){
   normalizeLocal();
   try{
@@ -79,7 +80,7 @@ async function dbLoad(){
     }
     var r2=await db.from("homework").select("*").order("id",{ascending:true});
     if(r2.error)throw r2.error;
-    homework=(r2.data||[]).map(function(x){return {id:x.id,day:x.day,week:x.week_key,subject:x.subject,task:x.task,done:!!x.done};});
+    homework=(r2.data||[]).map(function(x){return {id:x.id,day:x.day,week:x.week_key,subject:x.subject,task:x.task,done:!!doneLocal[x.id]};});
     save();
   }catch(e){console.error("Supabase:",e);save();}
 }
@@ -101,9 +102,9 @@ async function addHomework(){
 }
 async function toggleDone(i){
   if(!homework[i])return;
-  var r=await db.from("homework").update({done:!homework[i].done}).eq("id",homework[i].id);
-  if(r.error){alert("Не удалось изменить ДЗ");console.error(r.error);return;}
-  homework[i].done=!homework[i].done;save();render();
+  homework[i].done=!homework[i].done;
+  if(homework[i].done)doneLocal[homework[i].id]=true;else delete doneLocal[homework[i].id];
+  save();render();
 }
 async function deleteHomework(i){
   if(!homework[i])return;
@@ -112,7 +113,7 @@ async function deleteHomework(i){
   homework.splice(i,1);save();render();
 }
 window.selectDay=selectDay;window.prevWeek=prevWeek;window.updateSubjectOptions=updateSubjectOptions;window.openMenu=openMenu;window.closeMenu=closeMenu;window.setTheme=setTheme;window.telegram=telegram;window.nextWeek=nextWeek;window.openModal=openModal;window.closeModal=closeModal;window.addHomework=addHomework;window.toggleDone=toggleDone;window.deleteHomework=deleteHomework;
-window.addEventListener("DOMContentLoaded",async function(){var theme=localStorage.getItem("dnevnic_theme")||"dark";setTheme(theme);var n=moscow().getUTCDay();if(n>=1&&n<=5)selectedDay=days[n-1];normalizeLocal();await dbLoad();renderTabs();render();document.getElementById("modalBg").addEventListener("click",function(e){if(e.target===this)closeModal();});document.getElementById("menuBg").addEventListener("click",function(e){if(e.target===this)closeMenu();});});
+window.addEventListener("DOMContentLoaded",async function(){var theme=localStorage.getItem("dnevnic_theme")||"dark";loadDoneLocal();setTheme(theme);var n=moscow().getUTCDay();if(n>=1&&n<=5)selectedDay=days[n-1];normalizeLocal();await dbLoad();renderTabs();render();document.getElementById("modalBg").addEventListener("click",function(e){if(e.target===this)closeModal();});document.getElementById("menuBg").addEventListener("click",function(e){if(e.target===this)closeMenu();});});
 })();
 </script>
 </body>
