@@ -70,11 +70,19 @@ homework=homework.map(x=>{
 });
 
 function save(){localStorage.setItem("dnevnic_homework",JSON.stringify(homework))}
-function moscowNow(){
- const parts=new Intl.DateTimeFormat("en-US",{timeZone:"Europe/Moscow",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
- const get=t=>parts.find(p=>p.type===t).value;
- return new Date(Number(get("year")),Number(get("month"))-1,Number(get("day")));
+function moscowToday(){
+ const s=new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Moscow",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+ const [y,m,d]=s.split("-").map(Number);
+ return {year:y,month:m,day:d};
 }
+function weekDates(){
+ const t=moscowToday();
+ const now=new Date(t.year,t.month-1,t.day);
+ const day=now.getDay(),diff=day===0?-6:1-day;
+ const monday=new Date(now);monday.setDate(now.getDate()+diff);
+ return days.map((_,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);return d});
+}
+function dateText(d){return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")}
 function weekDates(){
  const now=moscowNow(),day=now.getDay(),diff=day===0?-6:1-day;
  const monday=new Date(now);monday.setDate(now.getDate()+diff);
