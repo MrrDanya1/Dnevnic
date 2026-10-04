@@ -78,7 +78,7 @@ function weekDates(){
 function dateText(d){return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")}
 function renderTabs(){
  const dates=weekDates();
- document.getElementById("dayTabs").innerHTML=days.map((d,i)=>'<button class="tab '+(d===selectedDay?"active":"")+'" onclick="selectDay(\''+d+'\')"><b>'+shortDays[i]+'</b>'+dateText(d)+'</button>').join("");
+ document.getElementById("dayTabs").innerHTML=days.map((d,i)=>'<button class="tab '+(d===selectedDay?"active":"")+'" data-day="'+esc(d)+'" onclick="selectDay(this.dataset.day)"><b>'+shortDays[i]+'</b>'+dateText(d)+'</button>').join("");
 }
 function renderSchedule(){
  const lessons=schedule[selectedDay];
