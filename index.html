@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Дневник 9Б</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#000;color:#fff;font-family:Arial,sans-serif}
+.app{max-width:600px;margin:auto;min-height:100vh;padding:18px 14px 100px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.logo{font-size:27px;font-weight:800}.class-name{color:#777;font-size:14px;margin-top:3px}
+.date-box{background:#111;border:1px solid #222;border-radius:16px;padding:15px;margin-bottom:18px}
+.date-title{color:#777;font-size:13px;margin-bottom:7px}
+input,select,textarea{width:100%;background:#181818;color:#fff;border:1px solid #292929;border-radius:12px;padding:13px;font-size:15px;outline:0}
+textarea{resize:vertical;min-height:90px}
+.section-title{font-size:18px;font-weight:700;margin:20px 0 12px}
+.homework{background:#111;border:1px solid #222;border-radius:17px;padding:15px;margin-bottom:11px}
+.subject{font-size:16px;font-weight:700;margin-bottom:8px}.task{color:#cfcfcf;line-height:1.45;white-space:pre-wrap}
+.meta{color:#666;font-size:12px;margin-top:12px}.done{opacity:.45}.done .subject{text-decoration:line-through}
+.actions{display:flex;gap:8px;margin-top:13px}button{border:0;color:#fff;background:#1c1c1c;border-radius:11px;padding:10px 13px;font-size:13px}
+.done-btn{background:#202020}.delete-btn{background:#171717;color:#aaa}
+.empty{text-align:center;color:#555;padding:45px 10px}
+.add-button{position:fixed;right:18px;bottom:20px;width:58px;height:58px;border-radius:50%;background:#fff;color:#000;font-size:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 30px #000}
+.modal-bg{position:fixed;inset:0;background:#000c;display:none;align-items:flex-end;justify-content:center;z-index:10}
+.modal{width:100%;max-width:600px;background:#101010;border-radius:24px 24px 0 0;padding:20px 15px 30px;border-top:1px solid #292929}
+.modal h2{margin:0 0 18px;font-size:21px}.field{margin-bottom:12px}.field label{display:block;color:#888;font-size:12px;margin-bottom:6px}
+.save,.cancel{width:100%;margin-top:5px;padding:14px;font-weight:700}.save{background:#fff;color:#000}.cancel{background:#1a1a1a;color:#aaa;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div><div class="logo">Дневник</div><div class="class-name">9Б класс</div></div></header>
+<div class="date-box"><div class="date-title">Домашнее задание на дату</div><input type="date" id="dateFilter"></div>
+<div class="section-title">Домашка</div><div id="homeworkList"></div>
+</div>
+<button class="add-button" onclick="openModal()">+</button>
+<div class="modal-bg" id="modalBg"><div class="modal">
+<h2>Добавить домашку</h2>
+<div class="field"><label>Предмет</label><select id="subject">
+<option>Русский язык</option><option>Литература</option><option>Математика</option><option>Алгебра</option><option>Геометрия</option><option>Физика</option><option>Химия</option><option>Биология</option><option>География</option><option>История</option><option>Обществознание</option><option>Английский язык</option><option>Информатика</option><option>Другой предмет</option>
+</select></div>
+<div class="field"><label>Задание</label><textarea id="task" placeholder="Например: §15, выучить правила..."></textarea></div>
+<div class="field"><label>Дата</label><input type="date" id="homeworkDate"></div>
+<button class="save" onclick="addHomework()">Добавить</button><button class="cancel" onclick="closeModal()">Отмена</button>
+</div></div>
+<script>
+let homework=JSON.parse(localStorage.getItem("dnevnic_homework")||"[]");
+const dateFilter=document.getElementById("dateFilter"),homeworkDate=document.getElementById("homeworkDate");
+function today(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day}
+dateFilter.value=today();homeworkDate.value=today();dateFilter.addEventListener("change",render);
+function save(){localStorage.setItem("dnevnic_homework",JSON.stringify(homework))}
+function render(){const list=document.getElementById("homeworkList"),date=dateFilter.value,items=homework.filter(x=>x.date===date).sort((a,b)=>b.id-a.id);
+if(!items.length){list.innerHTML='<div class="empty">На этот день домашнего задания нет</div>';return}
+list.innerHTML=items.map(x=>'<div class="homework '+(x.done?"done":"")+'"><div class="subject">'+esc(x.subject)+'</div><div class="task">'+esc(x.task)+'</div><div class="meta">'+fmt(x.date)+'</div><div class="actions"><button class="done-btn" onclick="toggleDone('+x.id+')">'+(x.done?"Не выполнено":"Выполнено")+'</button><button class="delete-btn" onclick="deleteHomework('+x.id+')">Удалить</button></div></div>').join("")}
+function addHomework(){const subject=document.getElementById("subject").value,task=document.getElementById("task").value.trim(),date=homeworkDate.value;if(!task){alert("Напиши задание");return}homework.push({id:Date.now(),subject,task,date,done:false});save();dateFilter.value=date;document.getElementById("task").value="";closeModal();render()}
+function toggleDone(id){const x=homework.find(x=>x.id===id);if(x){x.done=!x.done;save();render()}}
+function deleteHomework(id){homework=homework.filter(x=>x.id!==id);save();render()}
+function openModal(){homeworkDate.value=dateFilter.value||today();document.getElementById("modalBg").style.display="flex"}
+function closeModal(){document.getElementById("modalBg").style.display="none"}
+document.getElementById("modalBg").addEventListener("click",e=>{if(e.target===e.currentTarget)closeModal()})
+function fmt(d){const [y,m,day]=d.split("-");return day+"."+m+"."+y}
+function esc(t){return t.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+render();
+</script>
+</body>
+</html>
