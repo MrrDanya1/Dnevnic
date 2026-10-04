@@ -8,23 +8,18 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:#000;color:#fff;font-family:Arial,sans-serif}
 .app{max-width:600px;margin:auto;min-height:100vh;padding:18px 14px 100px}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.logo{font-size:27px;font-weight:800}.class-name{color:#777;font-size:14px;margin-top:3px}
+header{margin-bottom:20px}.logo{font-size:27px;font-weight:800}.class-name{color:#777;font-size:14px;margin-top:3px}
 .tabs{display:flex;gap:7px;overflow-x:auto;margin-bottom:14px;padding-bottom:3px}
-.tab{flex:0 0 auto;background:#111;border:1px solid #222;color:#888;border-radius:12px;padding:10px 13px;font-size:13px}
-.tab.active{background:#fff;color:#000;border-color:#fff}
+.tab{flex:1 0 19%;min-width:72px;background:#111;border:1px solid #222;color:#888;border-radius:12px;padding:9px 6px;font-size:12px}
+.tab b{display:block;color:inherit;font-size:14px;margin-bottom:3px}.tab.active{background:#fff;color:#000;border-color:#fff}
 .schedule{background:#111;border:1px solid #222;border-radius:17px;padding:15px;margin-bottom:18px}
 .schedule-title{font-size:18px;font-weight:700;margin-bottom:12px}
 .lesson{display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #1d1d1d}
 .lesson:last-child{border-bottom:0;padding-bottom:0}.num{width:24px;color:#666;font-size:13px;text-align:center}.lesson-name{font-size:14px;line-height:1.3}
-.date-box{background:#111;border:1px solid #222;border-radius:16px;padding:15px;margin-bottom:18px}
-.date-title{color:#777;font-size:13px;margin-bottom:7px}
-input,select,textarea{width:100%;background:#181818;color:#fff;border:1px solid #292929;border-radius:12px;padding:13px;font-size:15px;outline:0}
-textarea{resize:vertical;min-height:90px}
 .section-title{font-size:18px;font-weight:700;margin:20px 0 12px}
 .homework{background:#111;border:1px solid #222;border-radius:17px;padding:15px;margin-bottom:11px}
 .subject{font-size:16px;font-weight:700;margin-bottom:8px}.task{color:#cfcfcf;line-height:1.45;white-space:pre-wrap}
-.meta{color:#666;font-size:12px;margin-top:12px}.done{opacity:.45}.done .subject{text-decoration:line-through}
+.done{opacity:.45}.done .subject{text-decoration:line-through}
 .actions{display:flex;gap:8px;margin-top:13px}button{border:0;color:#fff;background:#1c1c1c;border-radius:11px;padding:10px 13px;font-size:13px}
 .done-btn{background:#202020}.delete-btn{background:#171717;color:#aaa}
 .empty{text-align:center;color:#555;padding:45px 10px}
@@ -32,20 +27,16 @@ textarea{resize:vertical;min-height:90px}
 .modal-bg{position:fixed;inset:0;background:#000c;display:none;align-items:flex-end;justify-content:center;z-index:10}
 .modal{width:100%;max-width:600px;background:#101010;border-radius:24px 24px 0 0;padding:20px 15px 30px;border-top:1px solid #292929}
 .modal h2{margin:0 0 18px;font-size:21px}.field{margin-bottom:12px}.field label{display:block;color:#888;font-size:12px;margin-bottom:6px}
-.save,.cancel{width:100%;margin-top:5px;padding:14px;font-weight:700}.save{background:#fff;color:#000}.cancel{background:#1a1a1a;color:#aaa;margin-top:8px}
+input,select,textarea{width:100%;background:#181818;color:#fff;border:1px solid #292929;border-radius:12px;padding:13px;font-size:15px;outline:0}
+textarea{resize:vertical;min-height:90px}.save,.cancel{width:100%;margin-top:5px;padding:14px;font-weight:700}
+.save{background:#fff;color:#000}.cancel{background:#1a1a1a;color:#aaa;margin-top:8px}
 </style>
 </head>
 <body>
 <div class="app">
-<header><div><div class="logo">Дневник</div><div class="class-name">9Б класс</div></div></header>
-
+<header><div class="logo">Дневник</div><div class="class-name">9Б класс</div></header>
 <div class="tabs" id="dayTabs"></div>
-<div class="schedule">
-  <div class="schedule-title" id="scheduleTitle">Расписание</div>
-  <div id="scheduleList"></div>
-</div>
-
-<div class="date-box"><div class="date-title">Домашнее задание на дату</div><input type="date" id="dateFilter"></div>
+<div class="schedule"><div class="schedule-title" id="scheduleTitle">Расписание</div><div id="scheduleList"></div></div>
 <div class="section-title">Домашка</div><div id="homeworkList"></div>
 </div>
 
@@ -54,8 +45,8 @@ textarea{resize:vertical;min-height:90px}
 <h2>Добавить домашку</h2>
 <div class="field"><label>Урок</label><select id="subject"></select></div>
 <div class="field"><label>Задание</label><textarea id="task" placeholder="Например: §15, выучить правила..."></textarea></div>
-<div class="field"><label>Дата</label><input type="date" id="homeworkDate"></div>
-<button class="save" onclick="addHomework()">Добавить</button><button class="cancel" onclick="closeModal()">Отмена</button>
+<button class="save" onclick="addHomework()">Добавить</button>
+<button class="cancel" onclick="closeModal()">Отмена</button>
 </div></div>
 
 <script>
@@ -67,56 +58,56 @@ const schedule={
 "Пятница":["География","Физика","История","Алгебра","Литература","Информатика / Английский язык","Информатика / Английский язык"]
 };
 const days=["Понедельник","Вторник","Среда","Четверг","Пятница"];
-let homework=JSON.parse(localStorage.getItem("dnevnic_homework")||"[]");
-const dateFilter=document.getElementById("dateFilter"),homeworkDate=document.getElementById("homeworkDate");
+const shortDays=["Пн","Вт","Ср","Чт","Пт"];
 let selectedDay=days[Math.max(0,new Date().getDay()-1)];
 if(!days.includes(selectedDay)) selectedDay="Понедельник";
 
-function today(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day}
-function getDayFromDate(value){const d=new Date(value+"T12:00:00"),n=d.getDay();return n>=1&&n<=5?days[n-1]:selectedDay}
-dateFilter.value=today();homeworkDate.value=today();
+let homework=JSON.parse(localStorage.getItem("dnevnic_homework")||"[]");
+// Перевод старых записей с дат на дни недели
+homework=homework.map(x=>{
+ if(!x.day&&x.date){const d=new Date(x.date+"T12:00:00"),n=d.getDay();x.day=n>=1&&n<=5?days[n-1]:"Понедельник";delete x.date}
+ return x;
+});
 
+function save(){localStorage.setItem("dnevnic_homework",JSON.stringify(homework))}
+function weekDates(){
+ const now=new Date(),day=now.getDay(),diff=day===0?-6:1-day;
+ const monday=new Date(now);monday.setDate(now.getDate()+diff);
+ return days.map((_,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);return d});
+}
+function dateText(d){return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")}
 function renderTabs(){
- document.getElementById("dayTabs").innerHTML=days.map(d=>'<button class="tab '+(d===selectedDay?"active":"")+'" onclick="selectDay(\''+d+'\')">'+d.slice(0,2)+'</button>').join("");
+ const dates=weekDates();
+ document.getElementById("dayTabs").innerHTML=days.map((d,i)=>'<button class="tab '+(d===selectedDay?"active":"")+'" onclick="selectDay(\''+d+'\')"><b>'+shortDays[i]+'</b>'+dateText(d)+'</button>').join("");
 }
 function renderSchedule(){
  const lessons=schedule[selectedDay];
  document.getElementById("scheduleTitle").textContent=selectedDay;
  document.getElementById("scheduleList").innerHTML=lessons.map((x,i)=>'<div class="lesson"><div class="num">'+(i+1)+'</div><div class="lesson-name">'+esc(x)+'</div></div>').join("");
 }
-function selectDay(day){selectedDay=day;renderTabs();renderSchedule()}
-function save(){localStorage.setItem("dnevnic_homework",JSON.stringify(homework))}
+function selectDay(day){selectedDay=day;renderTabs();renderSchedule();render()}
 function render(){
- const list=document.getElementById("homeworkList"),date=dateFilter.value,items=homework.filter(x=>x.date===date).sort((a,b)=>b.id-a.id);
- if(!items.length){list.innerHTML='<div class="empty">На этот день домашнего задания нет</div>';return}
- list.innerHTML=items.map(x=>'<div class="homework '+(x.done?"done":"")+'"><div class="subject">'+esc(x.subject)+'</div><div class="task">'+esc(x.task)+'</div><div class="meta">'+fmt(x.date)+'</div><div class="actions"><button class="done-btn" onclick="toggleDone('+x.id+')">'+(x.done?"Не выполнено":"Выполнено")+'</button><button class="delete-btn" onclick="deleteHomework('+x.id+')">Удалить</button></div></div>').join("");
+ const list=document.getElementById("homeworkList"),items=homework.filter(x=>x.day===selectedDay).sort((a,b)=>b.id-a.id);
+ if(!items.length){list.innerHTML='<div class="empty">На '+selectedDay.toLowerCase()+' домашнего задания нет</div>';return}
+ list.innerHTML=items.map(x=>'<div class="homework '+(x.done?"done":"")+'"><div class="subject">'+esc(x.subject)+'</div><div class="task">'+esc(x.task)+'</div><div class="actions"><button class="done-btn" onclick="toggleDone('+x.id+')">'+(x.done?"Не выполнено":"Выполнено")+'</button><button class="delete-btn" onclick="deleteHomework('+x.id+')">Удалить</button></div></div>').join("");
 }
-function fillSubjects(){
- const subjects=[...new Set(Object.values(schedule).flat())];
- document.getElementById("subject").innerHTML=subjects.map(x=>'<option>'+esc(x)+'</option>').join("");
-}
-function addHomework(){
- const subject=document.getElementById("subject").value,task=document.getElementById("task").value.trim(),date=homeworkDate.value;
- if(!task){alert("Напиши задание");return}
- homework.push({id:Date.now(),subject,task,date,done:false});save();
- dateFilter.value=date;selectedDay=getDayFromDate(date);
- document.getElementById("task").value="";closeModal();renderTabs();renderSchedule();render();
-}
-function toggleDone(id){const x=homework.find(x=>x.id===id);if(x){x.done=!x.done;save();render()}}
-function deleteHomework(id){homework=homework.filter(x=>x.id!==id);save();render()}
 function openModal(){
- homeworkDate.value=dateFilter.value||today();
- const subjects=schedule[selectedDay]||[];
  const select=document.getElementById("subject");
- select.innerHTML=subjects.map(x=>'<option>'+esc(x)+'</option>').join("");
+ select.innerHTML=schedule[selectedDay].map(x=>'<option>'+esc(x)+'</option>').join("");
  document.getElementById("modalBg").style.display="flex";
 }
 function closeModal(){document.getElementById("modalBg").style.display="none"}
-dateFilter.addEventListener("change",()=>{selectedDay=getDayFromDate(dateFilter.value);renderTabs();renderSchedule();render()});
+function addHomework(){
+ const subject=document.getElementById("subject").value,task=document.getElementById("task").value.trim();
+ if(!task){alert("Напиши задание");return}
+ homework.push({id:Date.now(),day:selectedDay,subject,task,done:false});
+ save();document.getElementById("task").value="";closeModal();render();
+}
+function toggleDone(id){const x=homework.find(x=>x.id===id);if(x){x.done=!x.done;save();render()}}
+function deleteHomework(id){homework=homework.filter(x=>x.id!==id);save();render()}
 document.getElementById("modalBg").addEventListener("click",e=>{if(e.target===e.currentTarget)closeModal()});
-function fmt(d){const [y,m,day]=d.split("-");return day+"."+m+"."+y}
 function esc(t){return String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
-renderTabs();renderSchedule();fillSubjects();render();
+renderTabs();renderSchedule();render();save();
 </script>
 </body>
 </html>
