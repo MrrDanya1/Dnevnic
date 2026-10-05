@@ -53,7 +53,7 @@ body.light{background:#f5f5f5;color:#111}body.light .class-name{color:#777}body.
 (function(){
 var schedule={"Понедельник":["Разговор о важном","Русский язык","Русский язык","Физика","Биология","Вероятность и статистика","Английский язык"],"Вторник":["Литература","История","Английский язык","Алгебра","Химия","Геометрия","Курсы «Интересные вопросы математики» (факультатив ОГЭ)"],"Среда":["Русский язык","Физическая культура","Литература","ОБЖ","Алгебра","География","Обществознание"],"Четверг":["Физическая культура","Биология","Технология","Геометрия","Химия","Физика"],"Пятница":["География","Физика","История","Алгебра","Литература","Информатика / Английский язык","Информатика / Английский язык"]};
 var days=["Понедельник","Вторник","Среда","Четверг","Пятница"],shortDays=["Пн","Вт","Ср","Чт","Пт"],selectedDay="Понедельник",homework=[],weekOffset=0;
-var SUPABASE_URL="https://rlhlcubulfibqzqlynxe.supabase.co",SUPABASE_KEY="sb_publishable_m5vtdCgYosZ-ZkQc8D9xZw_HwA4-_32",db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),doneLocal={};
+var SUPABASE_URL="https://urypxiruqjzbzpvmuawk.supabase.co",SUPABASE_KEY="sb_publishable_idJre_Zv8cAXQvGticrblg_pXF9eBTP",db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),doneLocal={};
 function moscow(){var d=new Date(Date.now()+10800000);return new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));}
 function monday(){var t=moscow(),n=t.getUTCDay(),m=new Date(t);m.setUTCDate(t.getUTCDate()-(n===0?6:n-1)+weekOffset*7);return m;}
 function weekKey(){var d=monday();return d.getUTCFullYear()+"-"+("0"+(d.getUTCMonth()+1)).slice(-2)+"-"+("0"+d.getUTCDate()).slice(-2);}
