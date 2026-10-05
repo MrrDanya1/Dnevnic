@@ -35,7 +35,7 @@ body.light{background:#f5f5f5;color:#111}body.light .class-name{color:#777}body.
 <body>
 <div class="app">
 <header><div class="logo">Дневник</div><div class="class-name">9Б класс</div></header>
-<div class="week-switch"><button type="button" onclick="prevWeek()">‹</button><div class="week-name" id="weekName">Эта неделя</div><button type="button" onclick="nextWeek()">›</button></div><div class="tabs" id="dayTabs"></div>
+<div class="week-switch" id="weekSwitch"><button type="button" onclick="prevWeek()">‹</button><div class="week-name" id="weekName">Эта неделя</div><button type="button" onclick="nextWeek()">›</button></div><div class="tabs" id="dayTabs"></div>
 <div class="schedule"><div class="schedule-title" id="scheduleTitle">Загрузка</div><div id="scheduleList"></div></div>
 </div>
 
@@ -85,7 +85,7 @@ async function dbLoad(){
   }catch(e){console.error("Supabase:",e);save();}
 }
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-function startLoading(){var el=document.getElementById("scheduleTitle");if(!el)return;loadingDots=0;el.textContent="Загрузка";loadingTimer=setInterval(function(){loadingDots=(loadingDots+1)%4;el.textContent="Загрузка"+Array(loadingDots+1).join(".");},350);} function stopLoading(){if(loadingTimer){clearInterval(loadingTimer);loadingTimer=null;}}
+function startLoading(){var el=document.getElementById("scheduleTitle");if(!el)return;var ws=document.getElementById("weekSwitch");if(ws)ws.classList.add("hidden");loadingDots=0;el.textContent="Загрузка";loadingTimer=setInterval(function(){loadingDots=(loadingDots+1)%4;el.textContent="Загрузка"+Array(loadingDots+1).join(".");},350);} function stopLoading(){if(loadingTimer){clearInterval(loadingTimer);loadingTimer=null;}var ws=document.getElementById("weekSwitch");if(ws)ws.classList.remove("hidden");}
 function renderTabs(){var a=weekDates(),h="";document.getElementById("weekName").textContent=weekLabel();for(var i=0;i<5;i++)h+='<button type="button" class="tab '+(days[i]===selectedDay?"active":"")+'" onclick="selectDay('+i+')"><b>'+shortDays[i]+'</b><span>'+("0"+a[i].getUTCDate()).slice(-2)+"."+("0"+(a[i].getUTCMonth()+1)).slice(-2)+'</span></button>';document.getElementById("dayTabs").innerHTML=h;}
 function render(){var l=schedule[selectedDay]||[],h="",wk=weekKey();for(var i=0;i<l.length;i++){h+='<div class="lesson"><div class="num">'+(i+1)+'</div><div class="lesson-info"><div class="lesson-name">'+esc(l[i])+'</div>';for(var j=0;j<homework.length;j++)if(homework[j].week===wk&&homework[j].day===selectedDay&&homework[j].subject===l[i])h+='<div class="lesson-hw '+(homework[j].done?"done":"")+'">ДЗ: '+esc(homework[j].task)+'</div><div class="actions"><button type="button" onclick="toggleDone('+j+')">'+(homework[j].done?"Вернуть":"Выполнено")+'</button><button type="button" class="delete-btn" onclick="deleteHomework('+j+')">Удалить</button></div>';h+='</div></div>';}document.getElementById("scheduleTitle").textContent=selectedDay;document.getElementById("scheduleList").innerHTML=h;}
 function selectDay(i){selectedDay=days[i];renderTabs();render();}
