@@ -36,7 +36,7 @@ body.light{background:#f5f5f5;color:#111}body.light .class-name{color:#777}body.
 <div class="app">
 <header><div class="logo">Дневник</div><div class="class-name">9Б класс</div></header>
 <div class="week-switch"><button type="button" onclick="prevWeek()">‹</button><div class="week-name" id="weekName">Эта неделя</div><button type="button" onclick="nextWeek()">›</button></div><div class="tabs" id="dayTabs"></div>
-<div class="schedule"><div class="schedule-title" id="scheduleTitle">Расписание</div><div id="scheduleList"></div></div>
+<div class="schedule"><div class="schedule-title" id="scheduleTitle">Загрузка</div><div id="scheduleList"></div></div>
 </div>
 
 <button id="menu-button" class="menu-button" type="button" onclick="openMenu()" aria-label="Меню">☰</button><div class="menu-bg" id="menuBg"><div class="side-menu"><div class="menu-title">Меню</div><div class="menu-item">Тема<div class="theme-row"><button type="button" id="darkThemeBtn" onclick="setTheme('dark')">Тёмная</button><button type="button" id="lightThemeBtn" onclick="setTheme('light')">Светлая</button></div></div><button class="menu-item" type="button" onclick="telegram()">Перейти в Telegram-бота</button><button class="menu-item" type="button" onclick="openModal()">Предложить ДЗ</button></div></div>
@@ -52,7 +52,7 @@ body.light{background:#f5f5f5;color:#111}body.light .class-name{color:#777}body.
 <script>
 (function(){
 var schedule={"Понедельник":["Разговор о важном","Русский язык","Русский язык","Физика","Биология","Вероятность и статистика","Английский язык"],"Вторник":["Литература","История","Английский язык","Алгебра","Химия","Геометрия","Курсы «Интересные вопросы математики» (факультатив ОГЭ)"],"Среда":["Русский язык","Физическая культура","Литература","ОБЖ","Алгебра","География","Обществознание"],"Четверг":["Физическая культура","Биология","Технология","Геометрия","Химия","Физика"],"Пятница":["География","Физика","История","Алгебра","Литература","Информатика / Английский язык","Информатика / Английский язык"]};
-var days=["Понедельник","Вторник","Среда","Четверг","Пятница"],shortDays=["Пн","Вт","Ср","Чт","Пт"],selectedDay="Понедельник",homework=[],weekOffset=0;
+var days=["Понедельник","Вторник","Среда","Четверг","Пятница"],shortDays=["Пн","Вт","Ср","Чт","Пт"],selectedDay="Понедельник",homework=[],weekOffset=0,loadingDots=0,loadingTimer=null;
 var SUPABASE_URL="https://urypxiruqjzbzpvmuawk.supabase.co",SUPABASE_KEY="sb_publishable_idJre_Zv8cAXQvGticrblg_pXF9eBTP",db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),doneLocal={};
 function moscow(){var d=new Date(Date.now()+10800000);return new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));}
 function monday(){var t=moscow(),n=t.getUTCDay(),m=new Date(t);m.setUTCDate(t.getUTCDate()-(n===0?6:n-1)+weekOffset*7);return m;}
@@ -85,6 +85,7 @@ async function dbLoad(){
   }catch(e){console.error("Supabase:",e);save();}
 }
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function startLoading(){var el=document.getElementById("scheduleTitle");if(!el)return;loadingDots=0;el.textContent="Загрузка";loadingTimer=setInterval(function(){loadingDots=(loadingDots+1)%4;el.textContent="Загрузка"+Array(loadingDots+1).join(".");},350);} function stopLoading(){if(loadingTimer){clearInterval(loadingTimer);loadingTimer=null;}}
 function renderTabs(){var a=weekDates(),h="";document.getElementById("weekName").textContent=weekLabel();for(var i=0;i<5;i++)h+='<button type="button" class="tab '+(days[i]===selectedDay?"active":"")+'" onclick="selectDay('+i+')"><b>'+shortDays[i]+'</b><span>'+("0"+a[i].getUTCDate()).slice(-2)+"."+("0"+(a[i].getUTCMonth()+1)).slice(-2)+'</span></button>';document.getElementById("dayTabs").innerHTML=h;}
 function render(){var l=schedule[selectedDay]||[],h="",wk=weekKey();for(var i=0;i<l.length;i++){h+='<div class="lesson"><div class="num">'+(i+1)+'</div><div class="lesson-info"><div class="lesson-name">'+esc(l[i])+'</div>';for(var j=0;j<homework.length;j++)if(homework[j].week===wk&&homework[j].day===selectedDay&&homework[j].subject===l[i])h+='<div class="lesson-hw '+(homework[j].done?"done":"")+'">ДЗ: '+esc(homework[j].task)+'</div><div class="actions"><button type="button" onclick="toggleDone('+j+')">'+(homework[j].done?"Вернуть":"Выполнено")+'</button><button type="button" class="delete-btn" onclick="deleteHomework('+j+')">Удалить</button></div>';h+='</div></div>';}document.getElementById("scheduleTitle").textContent=selectedDay;document.getElementById("scheduleList").innerHTML=h;}
 function selectDay(i){selectedDay=days[i];renderTabs();render();}
@@ -113,7 +114,7 @@ async function deleteHomework(i){
   homework.splice(i,1);save();render();
 }
 window.selectDay=selectDay;window.prevWeek=prevWeek;window.updateSubjectOptions=updateSubjectOptions;window.openMenu=openMenu;window.closeMenu=closeMenu;window.setTheme=setTheme;window.telegram=telegram;window.nextWeek=nextWeek;window.openModal=openModal;window.closeModal=closeModal;window.addHomework=addHomework;window.toggleDone=toggleDone;window.deleteHomework=deleteHomework;
-window.addEventListener("DOMContentLoaded",async function(){var theme=localStorage.getItem("dnevnic_theme")||"dark";loadDoneLocal();setTheme(theme);var n=moscow().getUTCDay();if(n>=1&&n<=5)selectedDay=days[n-1];normalizeLocal();await dbLoad();renderTabs();render();document.getElementById("modalBg").addEventListener("click",function(e){if(e.target===this)closeModal();});document.getElementById("menuBg").addEventListener("click",function(e){if(e.target===this)closeMenu();});});
+window.addEventListener("DOMContentLoaded",async function(){startLoading();var theme=localStorage.getItem("dnevnic_theme")||"dark";loadDoneLocal();setTheme(theme);var n=moscow().getUTCDay();if(n>=1&&n<=5)selectedDay=days[n-1];normalizeLocal();await dbLoad();stopLoading();renderTabs();render();document.getElementById("modalBg").addEventListener("click",function(e){if(e.target===this)closeModal();});document.getElementById("menuBg").addEventListener("click",function(e){if(e.target===this)closeMenu();});});
 })();
 </script>
 </body>
