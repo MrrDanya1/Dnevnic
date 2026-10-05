@@ -20,121 +20,40 @@ header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
 input[type=file]{display:none}
 button{border:0;color:#fff;background:#1b1b1b;border-radius:13px;padding:13px;font-size:14px}
 .primary{width:100%;background:#fff;color:#000;font-weight:800;margin-top:12px;font-size:15px}
-.primary:disabled{opacity:.35}
-.secondary{width:100%;margin-top:8px;color:#aaa}
+.primary:disabled{opacity:.35}.secondary{width:100%;margin-top:8px;color:#aaa}
 .status{text-align:center;color:#777;font-size:13px;min-height:20px;margin:12px 0}
 .spinner{display:inline-block;width:15px;height:15px;border:2px solid #444;border-top-color:#fff;border-radius:50%;vertical-align:-3px;margin-right:6px;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .answer{white-space:pre-wrap;line-height:1.55;color:#ddd;font-size:15px}
-.answer h3{margin:0 0 10px;color:#fff}
-.answer-block{background:#0b0b0b;border:1px solid #222;border-radius:14px;padding:14px;margin-top:10px}
-.answer-block .num{color:#777;font-size:12px;margin-bottom:5px}
-.copy{width:100%;margin-top:10px}
-.error{color:#ff8585;background:#190d0d;border-color:#3a1717}
-.hidden{display:none!important}
-.light{background:#f5f5f5;color:#111}
+.answer h3{margin:0 0 10px;color:#fff}.answer-block{background:#0b0b0b;border:1px solid #222;border-radius:14px;padding:14px;margin-top:10px}
+.copy{width:100%;margin-top:10px}.error{color:#ff8585;background:#190d0d;border-color:#3a1717}.hidden{display:none!important}
 </style>
 </head>
 <body>
 <div class="app">
-<header>
-<button class="back" onclick="location.href='index.html'" aria-label="Назад">‹</button>
-<div><div class="logo">Решатель</div><div class="sub">Задание по фото</div></div>
-</header>
-
+<header><button class="back" onclick="location.href='index.html'">‹</button><div><div class="logo">Решатель</div><div class="sub">Задание по фото</div></div></header>
 <div class="card">
-<label class="drop" id="drop" for="photo">
-<div class="icon">📷</div>
-<b>Загрузить фото задания</b>
-<span>Выбери фотографию из галереи или сделай снимок камерой</span>
-</label>
-<input id="photo" type="file" accept="image/*">
-<img id="preview" class="preview" alt="Фото задания">
-<button id="solve" class="primary" disabled>Решить задание</button>
-<button id="clear" class="secondary hidden">Выбрать другое фото</button>
+<label class="drop" id="drop" for="photo"><div class="icon">📷</div><b>Загрузить фото задания</b><span>Выбери фотографию из галереи или сделай снимок камерой</span></label>
+<input id="photo" type="file" accept="image/*"><img id="preview" class="preview" alt="Фото задания">
+<button id="solve" class="primary" disabled>Решить задание</button><button id="clear" class="secondary hidden">Выбрать другое фото</button>
 </div>
-
-<div id="status" class="status"></div>
-<div id="result" class="card hidden"></div>
+<div id="status" class="status"></div><div id="result" class="card hidden"></div>
 </div>
-
 <script>
-const fileInput=document.getElementById('photo');
-const drop=document.getElementById('drop');
-const preview=document.getElementById('preview');
-const solveBtn=document.getElementById('solve');
-const clearBtn=document.getElementById('clear');
-const statusEl=document.getElementById('status');
-const result=document.getElementById('result');
+const ENDPOINT='https://urypxiruqjzbzpvmuawk.supabase.co/functions/v1/photo-solver';
+const fileInput=document.getElementById('photo'),drop=document.getElementById('drop'),preview=document.getElementById('preview'),solveBtn=document.getElementById('solve'),clearBtn=document.getElementById('clear'),statusEl=document.getElementById('status'),result=document.getElementById('result');
 let selectedFile=null;
-
 fileInput.addEventListener('change',()=>setFile(fileInput.files?.[0]));
 ['dragenter','dragover'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add('active')}));
 ['dragleave','drop'].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove('active')}));
 drop.addEventListener('drop',ev=>setFile(ev.dataTransfer.files?.[0]));
-
-function setFile(file){
- if(!file)return;
- if(!file.type.startsWith('image/'))return showError('Нужна фотография.');
- if(file.size>12*1024*1024)return showError('Фото слишком большое. Максимум 12 МБ.');
- selectedFile=file;
- preview.src=URL.createObjectURL(file);
- preview.style.display='block';
- drop.classList.add('hidden');
- solveBtn.disabled=false;
- clearBtn.classList.remove('hidden');
- result.classList.add('hidden');
- statusEl.textContent='';
-}
-
-clearBtn.onclick=()=>{
- selectedFile=null;fileInput.value='';preview.removeAttribute('src');preview.style.display='none';
- drop.classList.remove('hidden');solveBtn.disabled=true;clearBtn.classList.add('hidden');
- result.classList.add('hidden');statusEl.textContent='';
-};
-
-solveBtn.onclick=async()=>{
- if(!selectedFile)return;
- setBusy(true);
- try{
-   const imageData=await toDataURL(selectedFile);
-   const response=await fetch('https://urypxiruqjzbzpvmuawk.supabase.co/functions/v1/dnevnic-bot',{
-     method:'POST',
-     headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({action:'solve_photo',image:imageData})
-   });
-   const data=await response.json().catch(()=>({}));
-   if(!response.ok||data.error)throw new Error(data.error||'Не удалось получить ответ от ИИ.');
-   renderResult(data.answer||data.result||data.text||'ИИ не вернул ответ.');
- }catch(e){
-   showError(e.message||'Произошла ошибка.');
- }finally{setBusy(false)}
-};
-
-function toDataURL(file){
- return new Promise((resolve,reject)=>{
-   const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file);
- });
-}
-function setBusy(b){
- solveBtn.disabled=b;
- statusEl.innerHTML=b?'<span class="spinner"></span>ИИ решает задание…':'';
-}
-function renderResult(text){
- result.classList.remove('hidden','error');
- result.innerHTML='<div class="answer"><h3>Ответ</h3><div class="answer-block" id="answerText"></div></div><button class="copy" id="copy">Скопировать ответ</button>';
- document.getElementById('answerText').textContent=String(text);
- document.getElementById('copy').onclick=async()=>{
-   await navigator.clipboard.writeText(String(text));
-   document.getElementById('copy').textContent='Скопировано ✓';
-   setTimeout(()=>document.getElementById('copy').textContent='Скопировать ответ',1200);
- };
- statusEl.textContent='';
-}
-function showError(msg){
- result.classList.remove('hidden');result.classList.add('error');
- result.innerHTML='<div class="answer"><h3>Ошибка</h3><div>'+escapeHtml(msg)+'</div></div>';
-}
+function setFile(file){if(!file)return;if(!file.type.startsWith('image/'))return showError('Нужна фотография.');if(file.size>12*1024*1024)return showError('Фото слишком большое. Максимум 12 МБ.');selectedFile=file;preview.src=URL.createObjectURL(file);preview.style.display='block';drop.classList.add('hidden');solveBtn.disabled=false;clearBtn.classList.remove('hidden');result.classList.add('hidden');statusEl.textContent=''}
+clearBtn.onclick=()=>{selectedFile=null;fileInput.value='';preview.removeAttribute('src');preview.style.display='none';drop.classList.remove('hidden');solveBtn.disabled=true;clearBtn.classList.add('hidden');result.classList.add('hidden');statusEl.textContent=''};
+solveBtn.onclick=async()=>{if(!selectedFile)return;setBusy(true);try{const imageData=await toDataURL(selectedFile);const response=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:imageData})});const data=await response.json().catch(()=>({}));if(!response.ok||data.error)throw new Error(data.error||'Не удалось получить ответ от ИИ.');renderResult(data.answer||'ИИ не вернул ответ.')}catch(e){showError(e.message||'Произошла ошибка.')}finally{setBusy(false)}};
+function toDataURL(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)})}
+function setBusy(b){solveBtn.disabled=b;statusEl.innerHTML=b?'<span class="spinner"></span>ИИ решает задание…':''}
+function renderResult(text){result.classList.remove('hidden','error');result.innerHTML='<div class="answer"><h3>Ответ</h3><div class="answer-block" id="answerText"></div></div><button class="copy" id="copy">Скопировать ответ</button>';document.getElementById('answerText').textContent=String(text);document.getElementById('copy').onclick=async()=>{try{await navigator.clipboard.writeText(String(text));document.getElementById('copy').textContent='Скопировано ✓';setTimeout(()=>document.getElementById('copy').textContent='Скопировать ответ',1200)}catch{}};statusEl.textContent=''}
+function showError(msg){result.classList.remove('hidden');result.classList.add('error');result.innerHTML='<div class="answer"><h3>Ошибка</h3><div>'+escapeHtml(msg)+'</div></div>'}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
 </script>
 </body>
