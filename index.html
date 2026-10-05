@@ -41,10 +41,10 @@ body.light{background:#f5f5f5;color:#111}body.light .class-name{color:#777}body.
 
 <button id="menu-button" class="menu-button" type="button" onclick="openMenu()" aria-label="Меню">☰</button><div class="menu-bg" id="menuBg"><div class="side-menu"><div class="menu-title">Меню</div><div class="menu-item">Тема<div class="theme-row"><button type="button" id="darkThemeBtn" onclick="setTheme('dark')">Тёмная</button><button type="button" id="lightThemeBtn" onclick="setTheme('light')">Светлая</button></div></div><button class="menu-item" type="button" onclick="telegram()">Перейти в Telegram-бота</button><button class="menu-item" type="button" onclick="openModal()">Предложить ДЗ</button></div></div>
 <div class="modal-bg" id="modalBg"><div class="modal">
-<h2>Добавить домашку</h2>
+<h2>Предложить ДЗ</h2>
 <div class="field"><label>Неделя</label><select id="hwWeek"><option value="0">Эта неделя</option><option value="1">Следующая неделя</option></select></div><div class="field"><label>День недели</label><select id="hwDay" onchange="updateSubjectOptions()"><option>Понедельник</option><option>Вторник</option><option>Среда</option><option>Четверг</option><option>Пятница</option></select></div><div class="field"><label>Урок</label><select id="subject"></select></div>
 <div class="field"><label>Задание</label><textarea id="task" placeholder="Например: §15, выучить правила..."></textarea></div>
-<button class="save" onclick="addHomework()">Добавить</button>
+<button class="save" onclick="addHomework()">Отправить на проверку</button>
 <button class="cancel" onclick="closeModal()">Отмена</button>
 </div></div>
 
@@ -95,11 +95,18 @@ function closeModal(){document.getElementById("modalBg").style.display="none";do
 async function addHomework(){
   var s=document.getElementById("subject").value,t=document.getElementById("task").value.trim();
   if(!t){alert("Напиши задание");return;}
-  var day=document.getElementById("hwDay").value,w=parseInt(document.getElementById("hwWeek").value,10)||0,old=weekOffset;
-  weekOffset=w;var wk=weekKey();weekOffset=old;
-  var r=await db.from("homework").insert({week_key:wk,day:day,subject:s,task:t,done:false});
-  if(r.error){alert("Не удалось сохранить ДЗ");console.error(r.error);return;}
-  closeModal();await dbLoad();renderTabs();render();
+  var day=document.getElementById("hwDay").value,w=parseInt(document.getElementById("hwWeek").value,10)||0;
+  var btn=document.querySelector(".save");if(btn)btn.disabled=true;
+  try{
+    var r=await fetch("https://urypxiruqjzbzpvmuawk.supabase.co/functions/v1/dnevnic-bot",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"submit_suggestion",week_offset:w,day:day,subject:s,task:t})
+    });
+    var data=await r.json();
+    if(!r.ok||!data.ok)throw new Error(data.error||"Не удалось отправить заявку");
+    closeModal();alert("Заявка отправлена на проверку. После одобрения ДЗ появится в дневнике.");
+  }catch(e){console.error(e);alert("Не удалось отправить заявку");}
+  finally{if(btn)btn.disabled=false;}
 }
 async function toggleDone(i){
   if(!homework[i])return;
