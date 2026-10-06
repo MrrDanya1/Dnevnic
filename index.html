@@ -52,7 +52,7 @@ body.light{background:#f5f5f5;color:#111}body.light .class-name{color:#777}body.
 (function(){
 var schedule={"Понедельник":["Разговор о важном","Русский язык","Русский язык","Физика","Биология","Вероятность и статистика","Английский язык"],"Вторник":["Литература","История","Английский язык","Алгебра","Химия","Геометрия","Курсы «Интересные вопросы математики» (факультатив ОГЭ)"],"Среда":["Русский язык","Физическая культура","Литература","ОБЖ","Алгебра","География","Обществознание"],"Четверг":["Физическая культура","Биология","Технология","Геометрия","Химия","Физика"],"Пятница":["География","Физика","История","Алгебра","Литература","Информатика / Английский язык","Информатика / Английский язык"]};
 var days=["Понедельник","Вторник","Среда","Четверг","Пятница"],shortDays=["Пн","Вт","Ср","Чт","Пт"],selectedDay="Понедельник",homework=[],weekOffset=0,loadingDots=0,loadingTimer=null;
-var SUPABASE_URL="https://urypxiruqjzbzpvmuawk.supabase.co",SUPABASE_KEY="sb_publishable_idJre_Zv8cAXQvGticrblg_pXF9eBTP",db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY),doneLocal={};
+var SUPABASE_URL="https://urypxiruqjzbzpvmuawk.supabase.co",SUPABASE_KEY="sb_publishable_idJre_Zv8cAXQvGticrblg_pXF9eBTP",db=null,doneLocal={};
 function moscow(){var d=new Date(Date.now()+10800000);return new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));}
 function monday(){var t=moscow(),n=t.getUTCDay(),m=new Date(t);m.setUTCDate(t.getUTCDate()-(n===0?6:n-1)+weekOffset*7);return m;}
 function weekKey(){var d=monday();return d.getUTCFullYear()+"-"+("0"+(d.getUTCMonth()+1)).slice(-2)+"-"+("0"+d.getUTCDate()).slice(-2);}
@@ -71,6 +71,8 @@ function save(){try{localStorage.setItem("dnevnic_homework",JSON.stringify(homew
 async function dbLoad(){
   normalizeLocal();
   try{
+    if(!window.supabase||!window.supabase.createClient)throw new Error("Supabase library unavailable");
+    db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
     var r=await db.from("homework").select("*").order("week_key",{ascending:true}).order("day",{ascending:true}).order("id",{ascending:true});
     if(r.error)throw r.error;
     if(!r.data||!r.data.length){
@@ -121,7 +123,7 @@ async function toggleDone(i){
   save();render();
 }
 window.selectDay=selectDay;window.prevWeek=prevWeek;window.updateSubjectOptions=updateSubjectOptions;window.openMenu=openMenu;window.closeMenu=closeMenu;window.setTheme=setTheme;window.telegram=telegram;window.nextWeek=nextWeek;window.openModal=openModal;window.closeModal=closeModal;window.addHomework=addHomework;window.toggleDone=toggleDone;
-window.addEventListener("DOMContentLoaded",async function(){startLoading();var theme=localStorage.getItem("dnevnic_theme")||"dark";loadDoneLocal();setTheme(theme);var n=moscow().getUTCDay();if(n>=1&&n<=5)selectedDay=days[n-1];normalizeLocal();await dbLoad();stopLoading();renderTabs();render();document.getElementById("modalBg").addEventListener("click",function(e){if(e.target===this)closeModal();});document.getElementById("menuBg").addEventListener("click",function(e){if(e.target===this)closeMenu();});});
+window.addEventListener("DOMContentLoaded",async function(){startLoading();var theme=localStorage.getItem("dnevnic_theme")||"dark";loadDoneLocal();setTheme(theme);var n=moscow().getUTCDay();if(n>=1&&n<=5)selectedDay=days[n-1];normalizeLocal();try{await Promise.race([dbLoad(),new Promise(function(_,reject){setTimeout(function(){reject(new Error("DB timeout"));},7000);})]);}catch(e){console.error("Load:",e);}stopLoading();renderTabs();render();document.getElementById("modalBg").addEventListener("click",function(e){if(e.target===this)closeModal();});document.getElementById("menuBg").addEventListener("click",function(e){if(e.target===this)closeMenu();});});
 })();
 </script>
 </body>
