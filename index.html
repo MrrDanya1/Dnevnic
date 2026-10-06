@@ -85,9 +85,9 @@ async function dbLoad(){
 }
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function linkify(s){
-  return s.replace(/(^|[\\s(])((?:https?:\\/\\/|www\\.)[^\\s<]+)/gi,function(_,before,url){
+  return s.replace(/(^|[\s(])((?:https?:\/\/|www\.)[^\s<]+)/gi,function(_,before,url){
     var clean=url.replace(/[.,!?;:]+$/,"");
-    var href=/^www\\./i.test(clean)?"https://"+clean:clean;
+    var href=/^www\./i.test(clean)?"https://"+clean:clean;
     return before+'<a href="'+href+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">'+clean+'</a>'+url.slice(clean.length);
   });
 }
