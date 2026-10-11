@@ -6,38 +6,48 @@
 <meta name="theme-color" content="#000000">
 <title>Решатель по фото</title>
 <style>
+:root{color-scheme:dark;--bg:#080b09;--panel:#101612;--line:#26352b;--green:#8cf0a4;--muted:#91a095}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:#000;color:#fff;font-family:Arial,sans-serif}
-.app{width:min(600px,100%);min-height:100vh;margin:auto;padding:18px 14px 35px}
-header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
-.back{width:42px;height:42px;border:1px solid #252525;border-radius:13px;background:#111;color:#fff;font-size:24px}
-.logo{font-size:25px;font-weight:800}.sub{color:#777;font-size:13px;margin-top:3px}
-.card{background:#111;border:1px solid #252525;border-radius:19px;padding:16px;margin-bottom:13px}
-.drop{border:1px dashed #444;border-radius:16px;min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;cursor:pointer}
-.drop.active{border-color:#fff}
-.icon{font-size:44px;margin-bottom:10px}.drop b{font-size:17px}.drop span{color:#777;font-size:13px;margin-top:7px;line-height:1.4}
-.preview{width:100%;max-height:360px;object-fit:contain;border-radius:14px;background:#050505;display:none}
+body{margin:0;background:radial-gradient(ellipse at top,#14231a 0,#080b09 48%);color:#f4f8f4;font-family:Inter,Arial,sans-serif;min-height:100vh}
+.app{width:min(640px,100%);min-height:100vh;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 15px calc(32px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.back{flex:0 0 44px;width:44px;height:44px;border:1px solid var(--line);border-radius:15px;background:#121a14;color:#f5fff6;font-size:27px;display:grid;place-items:center}
+.logo{font-size:25px;font-weight:850;letter-spacing:-.7px}.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.hero{padding:4px 2px 18px}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:1.8px;color:var(--green);font-weight:800;margin-bottom:9px}.hero h1{font-size:29px;line-height:1.12;letter-spacing:-.9px;margin:0 0 9px}.hero p{color:#a4b2a7;font-size:14px;line-height:1.5;margin:0;max-width:430px}
+.card{background:linear-gradient(145deg,rgba(20,29,22,.98),rgba(13,18,14,.98));border:1px solid var(--line);border-radius:23px;padding:16px;margin-bottom:14px;box-shadow:0 12px 35px #0002}
+.drop{border:1.5px dashed #405848;border-radius:18px;min-height:208px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;cursor:pointer;background:linear-gradient(145deg,#14251a,#0d140f);transition:border-color .18s,background .18s}
+.drop.active{border-color:var(--green);background:#15291b}
+.icon{width:62px;height:62px;border-radius:21px;display:grid;place-items:center;background:#203c29;color:var(--green);font-size:30px;margin-bottom:15px}.drop b{font-size:17px;letter-spacing:-.2px}.drop span{color:#9aaa9e;font-size:13px;margin-top:8px;line-height:1.5;max-width:270px}
+.preview{width:100%;max-height:380px;object-fit:contain;border-radius:16px;background:#070a08;margin-top:2px;border:1px solid #25372a;display:none}
 input[type=file]{display:none}
-button{border:0;color:#fff;background:#1b1b1b;border-radius:13px;padding:13px;font-size:14px}
-.primary{width:100%;background:#fff;color:#000;font-weight:800;margin-top:12px;font-size:15px}
-.primary:disabled{opacity:.35}.secondary{width:100%;margin-top:8px;color:#aaa}
-.status{text-align:center;color:#777;font-size:13px;min-height:20px;margin:12px 0}
-.spinner{display:inline-block;width:15px;height:15px;border:2px solid #444;border-top-color:#fff;border-radius:50%;vertical-align:-3px;margin-right:6px;animation:spin .7s linear infinite}
+button{border:1px solid transparent;color:#f6fff7;background:#1a251d;border-radius:14px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;transition:transform .12s,opacity .12s}
+button:active{transform:scale(.99)}button:focus-visible,label:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.primary{width:100%;background:var(--green);color:#092010;font-weight:850;margin-top:13px;font-size:15px;box-shadow:0 5px 20px #5ce87a18}
+.primary:disabled{opacity:.42;box-shadow:none}.secondary{width:100%;margin-top:8px;color:#c0d0c4;background:#19231b;border-color:#2b3c2e}
+.status{text-align:center;color:#a1b2a5;font-size:13px;min-height:20px;margin:13px 0 10px}
+.spinner{display:inline-block;width:15px;height:15px;border:2px solid #3b4d40;border-top-color:var(--green);border-radius:50%;vertical-align:-3px;margin-right:7px;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.answer{white-space:pre-wrap;line-height:1.55;color:#ddd;font-size:15px}
-.answer h3{margin:0 0 10px;color:#fff}.answer-block{background:#0b0b0b;border:1px solid #222;border-radius:14px;padding:14px;margin-top:10px}
-.copy{width:100%;margin-top:10px}.error{color:#ff8585;background:#190d0d;border-color:#3a1717}.hidden{display:none!important}
+.result-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.result-title{font-size:19px;font-weight:850;letter-spacing:-.4px}.success-pill{font-size:11px;font-weight:800;color:var(--green);background:#1b3523;border:1px solid #2b5736;border-radius:99px;padding:6px 9px}
+.answer{color:#dce8df;font-size:15px;line-height:1.65;overflow-wrap:anywhere}.answer-block{background:#0a100c;border:1px solid #26362a;border-radius:16px;padding:15px;margin-top:10px}
+.task-block{padding:13px 0 14px;border-bottom:1px solid #243127}.task-block:first-child{padding-top:0}.task-block:last-child{border-bottom:0;padding-bottom:0}
+.task-heading{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:850;color:#f6fff7;margin:0 0 9px}
+.task-number{display:inline-grid;place-items:center;min-width:27px;height:27px;border-radius:9px;background:#24442d;color:var(--green);font-size:12px}
+.answer-line{margin:5px 0;white-space:pre-wrap}.answer-line.answer-final{color:var(--green);font-weight:800;background:#13271a;border-left:3px solid #72db8b;border-radius:0 9px 9px 0;padding:8px 10px;margin-top:9px}
+.answer-line.formula{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#d9f6df;background:#121d15;border-radius:8px;padding:7px 9px;font-size:13px;overflow-wrap:anywhere}
+.copy{width:100%;margin-top:12px;background:#e9fff0;color:#102316;font-weight:850}.error{color:#ffb7b7;background:#211111;border-color:#552727}.error .answer{color:#ffdada}.hidden{display:none!important}
+.footer-note{text-align:center;color:#65776a;font-size:11px;padding:5px 10px 0}
+@media(min-width:500px){.app{padding-left:22px;padding-right:22px}.hero h1{font-size:33px}}
 </style>
 </head>
 <body>
 <div class="app">
 <header><button class="back" onclick="location.href='index.html'">‹</button><div><div class="logo">Решатель</div><div class="sub">Задание по фото</div></div></header>
 <div class="card">
-<label class="drop" id="drop" for="photo"><div class="icon">📷</div><b>Загрузить фото задания</b><span>Выбери фотографию из галереи или сделай снимок камерой</span></label>
+<label class="drop" id="drop" for="photo"><div class="icon">↥</div><b>Загрузить фото задания</b><span>Выбери фотографию из галереи или сделай снимок камерой</span></label>
 <input id="photo" type="file" accept="image/*"><img id="preview" class="preview" alt="Фото задания">
 <button id="solve" class="primary" disabled>Решить задание</button><button id="clear" class="secondary hidden">Выбрать другое фото</button>
 </div>
-<div id="status" class="status"></div><div id="result" class="card hidden"></div>
+<div id="status" class="status"></div><div id="result" class="card hidden"></div><div class="footer-note">Проверяй условия и переписывай решение осознанно</div>
 </div>
 <script>
 const ENDPOINT='https://urypxiruqjzbzpvmuawk.supabase.co/functions/v1/photo-solver';
@@ -52,7 +62,46 @@ clearBtn.onclick=()=>{selectedFile=null;fileInput.value='';preview.removeAttribu
 solveBtn.onclick=async()=>{if(!selectedFile)return;setBusy(true);try{const imageData=await toDataURL(selectedFile);const response=await fetch(ENDPOINT,{method:'POST',headers:new Headers(),body:JSON.stringify({image:imageData})});const data=await response.json().catch(()=>({}));if(!response.ok||data.error)throw new Error(data.error||('Сервер вернул HTTP '+response.status+'.'));renderResult(data.answer||'ИИ не вернул ответ.')}catch(e){showError(e.message||'Произошла ошибка.')}finally{setBusy(false)}};
 function toDataURL(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const max=1600;const scale=Math.min(1,max/Math.max(img.width,img.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);const out=canvas.toDataURL('image/jpeg',0.82);if(out.length>8000000)reject(new Error('Фото слишком большое после обработки.'));else resolve(out)};img.onerror=()=>reject(new Error('Не удалось прочитать фото.'));img.src=String(r.result)};r.onerror=reject;r.readAsDataURL(file)})}
 function setBusy(b){solveBtn.disabled=b;statusEl.innerHTML=b?'<span class="spinner"></span>ИИ решает задание…':''}
-function renderResult(text){result.classList.remove('hidden','error');result.innerHTML='<div class="answer"><h3>Ответ</h3><div class="answer-block" id="answerText"></div></div><button class="copy" id="copy">Скопировать ответ</button>';document.getElementById('answerText').textContent=String(text);document.getElementById('copy').onclick=async()=>{try{await navigator.clipboard.writeText(String(text));document.getElementById('copy').textContent='Скопировано ✓';setTimeout(()=>document.getElementById('copy').textContent='Скопировать ответ',1200)}catch{}};statusEl.textContent=''}
+function renderResult(text){
+ const raw=String(text).replace(/\\r/g,'').trim();
+ result.classList.remove('hidden','error');
+ result.innerHTML='<div class="result-head"><div class="result-title">Решение заданий</div><span class="success-pill">Готово ✓</span></div><div class="answer-block" id="answerText"></div><button class="copy" id="copy">▣ Скопировать всё решение</button>';
+ const box=document.getElementById('answerText');
+ const lines=raw.split('\\n');
+ const taskStart=/^(?:задание\\s*\\d+|задача\\s*\\d+|упражнение\\s*\\d+|№\\s*\\d+|\\d{1,2}[.)])(?:\\s|$)/i;
+ let groups=[],current=null;
+ for(const line of lines){
+   const clean=line.trim();
+   if(!clean){if(current)current.lines.push('');continue}
+   if(taskStart.test(clean)){
+     current={title:clean,lines:[]};groups.push(current);
+   }else{
+     if(!current){current={title:'Решение',lines:[]};groups.push(current)}
+     current.lines.push(clean);
+   }
+ }
+ if(!groups.length)groups=[{title:'Решение',lines:[raw]}];
+ groups.forEach((g,index)=>{
+   const block=document.createElement('section');block.className='task-block';
+   const heading=document.createElement('div');heading.className='task-heading';
+   const number=document.createElement('span');number.className='task-number';number.textContent=String(index+1);
+   const title=document.createElement('span');title.textContent=/^(?:задание|задача|упражнение|№|\\d+[.)])/i.test(g.title)?g.title:'Ответ';
+   heading.append(number,title);block.append(heading);
+   g.lines.forEach(line=>{
+     if(!line){const spacer=document.createElement('div');spacer.style.height='3px';block.append(spacer);return}
+     const p=document.createElement('div');p.className='answer-line';p.textContent=line;
+     if(/^(?:ответ|итог|результат)\\s*:/i.test(line)||/^(?:ответ|итог)\\s*—/i.test(line)){p.classList.add('answer-final')}
+     else if(/(?:=|≈|\\b[xyz]\\s*=|\\b[QWmMnV]\\s*=)/.test(line)&&line.length<100){p.classList.add('formula')}
+     block.append(p);
+   });
+   box.append(block);
+ });
+ document.getElementById('copy').onclick=async()=>{
+   const btn=document.getElementById('copy');
+   try{if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(raw);else{const area=document.createElement('textarea');area.value=raw;document.body.append(area);area.select();document.execCommand('copy');area.remove()}btn.textContent='Скопировано ✓';setTimeout(()=>btn.textContent='▣ Скопировать всё решение',1400)}catch{btn.textContent='Не удалось скопировать'}
+ };
+ statusEl.textContent='';
+}
 function showError(msg){result.classList.remove('hidden');result.classList.add('error');result.innerHTML='<div class="answer"><h3>Ошибка</h3><div>'+escapeHtml(msg)+'</div></div>'}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
 </script>
