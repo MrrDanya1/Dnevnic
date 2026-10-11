@@ -64,35 +64,31 @@ solveBtn.onclick=async()=>{if(!selectedFile)return;setBusy(true);try{const image
 function toDataURL(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const max=1600;const scale=Math.min(1,max/Math.max(img.width,img.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);const out=canvas.toDataURL('image/jpeg',0.82);if(out.length>8000000)reject(new Error('Фото слишком большое после обработки.'));else resolve(out)};img.onerror=()=>reject(new Error('Не удалось прочитать фото.'));img.src=String(r.result)};r.onerror=reject;r.readAsDataURL(file)})}
 function setBusy(b){solveBtn.disabled=b;statusEl.innerHTML=b?'<span class="spinner"></span>ИИ решает задание…':''}
 function renderResult(text){
- const raw=String(text).replace(/\\r/g,'').trim();
+ const raw=String(text).replace(/\r/g,'').trim();
  result.classList.remove('hidden','error');
  result.innerHTML='<div class="result-head"><div class="result-title">Решение заданий</div><span class="success-pill">Готово ✓</span></div><div class="answer-block" id="answerText"></div><button class="copy" id="copy">▣ Скопировать всё решение</button>';
  const box=document.getElementById('answerText');
- const lines=raw.split('\\n');
- const taskStart=/^(?:задание\\s*\\d+|задача\\s*\\d+|упражнение\\s*\\d+|№\\s*\\d+|\\d{1,2}[.)])(?:\\s|$)/i;
+ const lines=raw.split('\n');
+ const taskStart=/^(?:задание\s*\d+|задача\s*\d+|упражнение\s*\d+|№\s*\d+|\d{1,2}[.)])(?:\s|$)/i;
  let groups=[],current=null;
  for(const line of lines){
    const clean=line.trim();
    if(!clean){if(current)current.lines.push('');continue}
-   if(taskStart.test(clean)){
-     current={title:clean,lines:[]};groups.push(current);
-   }else{
-     if(!current){current={title:'Решение',lines:[]};groups.push(current)}
-     current.lines.push(clean);
-   }
+   if(taskStart.test(clean)){current={title:clean,lines:[]};groups.push(current)}
+   else{if(!current){current={title:'Решение',lines:[]};groups.push(current)}current.lines.push(clean)}
  }
  if(!groups.length)groups=[{title:'Решение',lines:[raw]}];
  groups.forEach((g,index)=>{
    const block=document.createElement('section');block.className='task-block';
    const heading=document.createElement('div');heading.className='task-heading';
    const number=document.createElement('span');number.className='task-number';number.textContent=String(index+1);
-   const title=document.createElement('span');title.textContent=/^(?:задание|задача|упражнение|№|\\d+[.)])/i.test(g.title)?g.title:'Ответ';
+   const title=document.createElement('span');title.textContent=/^(?:задание|задача|упражнение|№|\d+[.)])/i.test(g.title)?g.title:'Ответ';
    heading.append(number,title);block.append(heading);
    g.lines.forEach(line=>{
      if(!line){const spacer=document.createElement('div');spacer.style.height='3px';block.append(spacer);return}
      const p=document.createElement('div');p.className='answer-line';p.textContent=line;
-     if(/^(?:ответ|итог|результат)\\s*:/i.test(line)||/^(?:ответ|итог)\\s*—/i.test(line)){p.classList.add('answer-final')}
-     else if(/(?:=|≈|\\b[xyz]\\s*=|\\b[QWmMnV]\\s*=)/.test(line)&&line.length<100){p.classList.add('formula')}
+     if(/^(?:ответ|итог|результат)\s*:/i.test(line)||/^(?:ответ|итог)\s*—/i.test(line))p.classList.add('answer-final');
+     else if(/(?:=|≈|\b[xyz]\s*=|\b[QWmMnV]\s*=)/.test(line)&&line.length<100)p.classList.add('formula');
      block.append(p);
    });
    box.append(block);
